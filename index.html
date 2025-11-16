@@ -213,6 +213,19 @@
         font-family: VT323, monospace;
       }
 
+      /* Estilo para contador (hacerlos más grandes) */
+      #spinCount {
+        display: inline-block;
+        font-size: 28px; /* aumentado para mayor visibilidad */
+        font-family: "Press Start 2P", monospace;
+        color: #3b2430;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px 12px;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        letter-spacing: 0.5px;
+      }
+
       /* -------------------------
        Corazones animados (DOM confetti)
        ------------------------- */
@@ -328,6 +341,9 @@
           grid-template-columns: 1fr;
           padding: 16px;
         }
+        #spinCount {
+          font-size: 22px;
+        }
       }
     </style>
   </head>
@@ -397,6 +413,39 @@
     <!-- Corazones animados -->
     <div class="hearts" id="hearts" aria-hidden="true"></div>
 
+    <!-- Intro modal (se muestra al abrir la página) -->
+    <div
+      class="overlay"
+      id="introOverlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="introTitle"
+    >
+      <div class="modal" role="document">
+        <h3
+          id="introTitle"
+          style="margin: 0 0 8px; font-family: VT323, monospace"
+        >
+          ¡Hola!
+        </h3>
+        <div style="color: #4a2a33; font-family: VT323, monospace">
+          probaa suerte en nuestro love game y gana un premio muy especial para
+          este dia de los enamorados.
+        </div>
+
+        <div class="actions" style="margin-top: 14px">
+          <button
+            id="introClose"
+            class="btn-min btn-play"
+            aria-label="Comenzar"
+          >
+            ¡Jugar!
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal cupón -->
     <div
       class="overlay"
@@ -459,7 +508,12 @@
       ];
       const lights = document.getElementById("lights");
       const heartsContainer = document.getElementById("hearts");
-      const overlay = document.getElementById("overlay");
+
+      // overlays / modals
+      const overlay = document.getElementById("overlay"); // cupón
+      const introOverlay = document.getElementById("introOverlay"); // intro popup
+
+      const introClose = document.getElementById("introClose");
       const couponCodeEl = document.getElementById("couponCode");
       const copyBtn = document.getElementById("copyBtn");
       const closeBtn = document.getElementById("closeBtn");
@@ -603,6 +657,9 @@
        ------------------------- */
       function spinAction() {
         if (spinning) return;
+        // si el intro está abierto, no dejar girar
+        if (introOverlay && introOverlay.classList.contains("show")) return;
+
         spinning = true;
         spinBtn.disabled = true;
         lights.classList.add("spin");
@@ -786,6 +843,16 @@
 
       // Acceso rápido: tecla Espacio para girar (evitar cuando foco en inputs)
       window.addEventListener("keydown", (e) => {
+        // si el intro está abierto, interceptamos para no girar
+        if (introOverlay && introOverlay.classList.contains("show")) {
+          // permitir Escape para cerrar el intro
+          if (e.code === "Escape") {
+            e.preventDefault();
+            introClose.click();
+          }
+          return;
+        }
+
         if (e.code === "Space") {
           const targetIsEditable =
             e.target &&
@@ -797,7 +864,7 @@
             spinBtn.click();
           }
         }
-        // cerrar modal con Escape
+        // cerrar modal con Escape (para cupón)
         if (e.code === "Escape") {
           if (overlay.classList.contains("show")) {
             closeModal();
@@ -807,7 +874,7 @@
         }
       });
 
-      // Cerrar modal si se hace click fuera del .modal
+      // Cerrar modal si se hace click fuera del .modal (cupón)
       overlay.addEventListener("click", (ev) => {
         if (ev.target === overlay) {
           closeModal();
@@ -816,9 +883,29 @@
         }
       });
 
+      // Cerrar intro si se hace click fuera del .modal (intro)
+      introOverlay.addEventListener("click", (ev) => {
+        if (ev.target === introOverlay) {
+          introOverlay.classList.remove("show");
+          introOverlay.setAttribute("aria-hidden", "true");
+          spinBtn.disabled = false;
+          clearTimeout(autoResetRef);
+        }
+      });
+
       // Botón Girar
       spinBtn.addEventListener("click", () => {
         spinAction();
+      });
+
+      // Cerrar intro al pulsar el botón
+      introClose.addEventListener("click", () => {
+        introOverlay.classList.remove("show");
+        introOverlay.setAttribute("aria-hidden", "true");
+        // habilitar jugar
+        spinBtn.disabled = false;
+        // devolver foco al botón girar
+        spinBtn.focus();
       });
 
       /* -------------------------
@@ -836,22 +923,33 @@
       /* -------------------------
        Inicialización al cargar la página
        ------------------------- */
-      (function init() {
-        // establecer contador visible (sin sobreescribir el mensaje inicial)
+      document.addEventListener("DOMContentLoaded", () => {
+        // establecer contador visible
         const startCount = getSpinCount();
         setSpinCount(startCount);
         // reels iniciales
         renderReels([randSymbol(), randSymbol(), randSymbol()]);
-        // NOTA: no se sobreescribe infoEl; el texto inicial solicitado permanece.
-      })();
+
+        // Mostrar popup inicial (intro) y deshabilitar el botón de girar hasta cerrarlo
+        if (introOverlay) {
+          introOverlay.classList.add("show");
+          introOverlay.setAttribute("aria-hidden", "false");
+          // deshabilitar jugar hasta que el usuario cierre el popup
+          spinBtn.disabled = true;
+          // poner foco en el botón del intro para accesibilidad
+          introClose?.focus();
+        }
+      });
 
       /* -------------------------
        Comentarios importantes:
-       - Reemplacé el texto de .info por el mensaje solicitado y eliminé
-         la sobreescritura que mostraba "Tiradas: 0/4. En la 4ª tirada ganas seguro."
-       - También ajusté el bloque donde aparecía "Tiradas:" para que no muestre esa frase exacta.
-       - El resto de la lógica (4ª tirada garantizada) permanece intacta pero
-         ya no se anuncia en el texto inicial visible.
+       - Añadí el popup inicial (introOverlay) que se muestra al cargar la página con
+         el mensaje solicitado y un botón "¡Jugar!" para cerrarlo.
+       - Mientras el popup intro está abierto el botón GIRAR queda deshabilitado
+         para evitar giros accidentales.
+       - Incrementé el tamaño visual del contador (#spinCount) para que los números n/4
+         se vean más grandes y llamativos.
+       - El resto de la lógica del juego permanece igual.
        ------------------------- */
     </script>
   </body>
