@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>LOVE GAME — Máquina de San Valentín</title>
+
+    <!-- Tipografías retro / pixel -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Librería liviana de confeti (opcional, usada para bursts) -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"
+    ></script>
+
+    <style>
+      /* -------------------------
+       Paleta y base
+       ------------------------- */
+      :root {
+        --bg: #ffe6f0; /* fondo rosa claro */
+        --pink-1: #ff6fa3; /* fucsia */
+        --pink-2: #ff9ec6; /* rosa claro */
+        --white: #ffffff;
+        --muted: #6b4a57;
+        --glass: rgba(255, 255, 255, 0.6);
+        --radius: 18px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: VT323, system-ui, Arial, sans-serif;
+        background: linear-gradient(180deg, var(--bg), #fff);
+        -webkit-font-smoothing: antialiased;
+        color: #3b2430;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      /* -------------------------
+       Layout central
+       ------------------------- */
+      .wrap {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 28px;
+      }
+
+      .machine {
+        width: 820px;
+        max-width: 96%;
+        border-radius: 28px;
+        padding: 20px;
+        background: linear-gradient(180deg, var(--pink-2), var(--pink-1));
+        box-shadow: 0 30px 80px rgba(139, 37, 80, 0.18);
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 18px;
+        position: relative;
+        overflow: visible;
+      }
+
+      /* Header (LOVE GAME) */
+      .header {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 4px 12px;
+      }
+      .title {
+        font-family: "Press Start 2P", monospace;
+        color: #fff;
+        font-size: 18px;
+        text-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+      }
+      .subtitle {
+        color: #ffeef6;
+        opacity: 0.95;
+        font-size: 13px;
+        font-family: VT323, monospace;
+      }
+
+      /* -------------------------
+       Panel izquierdo - pantalla de la máquina
+       ------------------------- */
+      .panel {
+        background: linear-gradient(180deg, #fff, #fff6fb);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: inset 0 -8px 30px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        min-height: 300px;
+      }
+
+      .screen {
+        width: 100%;
+        max-width: 420px;
+        padding: 14px;
+        background: linear-gradient(180deg, #fff9fb, #fff);
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        align-items: center;
+        border: 2px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* lámparas / luces retro */
+      .lights {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+        z-index: 5;
+      }
+      .light {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 8px rgba(255, 255, 255, 0.12);
+        transition: transform 220ms ease, background-color 220ms ease;
+      }
+      .lights.spin .light {
+        transform: scale(1.25);
+        background: #fff6f9;
+      }
+
+      .reel {
+        width: 120px;
+        height: 120px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fff, #fff0f6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 44px;
+        font-family: "Press Start 2P", monospace;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1),
+          box-shadow 220ms;
+        will-change: transform;
+      }
+      .reel.jiggle {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      /* -------------------------
+       Panel derecho - controles/info
+       ------------------------- */
+      .controls {
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        justify-content: center;
+      }
+      .big-btn {
+        background: linear-gradient(180deg, #ff3a6b, #ff1550);
+        color: white;
+        border: 0;
+        padding: 14px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-family: "Press Start 2P", monospace;
+        cursor: pointer;
+        box-shadow: 0 14px 30px rgba(255, 20, 80, 0.18);
+        font-size: 14px;
+        width: 100%;
+      }
+      .small-btn {
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.14);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        width: 100%;
+        font-family: VT323, monospace;
+      }
+      .info {
+        background: rgba(255, 255, 255, 0.06);
+        padding: 10px;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 13px;
+        text-align: center;
+        font-family: VT323, monospace;
+      }
+
+      /* -------------------------
+       Corazones animados (DOM confetti)
+       ------------------------- */
+      .hearts {
+        pointer-events: none;
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        z-index: 1200;
+      }
+      .hearts .heart {
+        position: absolute;
+        font-size: 20px;
+        will-change: transform, opacity;
+        animation: fall linear forwards;
+        opacity: 0.95;
+        filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.08));
+        transform-origin: center;
+      }
+      @keyframes fall {
+        0% {
+          transform: translateY(-8vh) scale(0.8);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(110vh) rotate(360deg) scale(1.05);
+          opacity: 0.95;
+        }
+      }
+
+      /* -------------------------
+       Modal / overlay / toast
+       ------------------------- */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.36);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1300;
+        padding: 18px;
+      }
+      .overlay.show {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+      }
+      .coupon {
+        display: inline-block;
+        background: linear-gradient(90deg, #fff1f8, #ffe6f0);
+        padding: 10px 14px;
+        border-radius: 10px;
+        margin-top: 8px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        font-family: "Press Start 2P", monospace;
+      }
+      .modal .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .btn-min {
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 0;
+        cursor: pointer;
+      }
+      .btn-copy {
+        background: #ff4d7a;
+        color: #fff;
+      }
+      .btn-play {
+        background: #ff9ec6;
+        color: #3b2430;
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 22px;
+        background: #ff8fb6;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 10px;
+        z-index: 1400;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 160ms ease;
+      }
+      .toast.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Responsive */
+      @media (max-width: 880px) {
+        .machine {
+          grid-template-columns: 1fr;
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <main class="machine" role="application" aria-label="Máquina Love Game">
+        <div class="header" aria-hidden="false">
+          <div>
+            <div class="title">LOVE GAME</div>
+            <div class="subtitle">Juega y gana un descuento especial 💝</div>
+          </div>
+          <div aria-hidden="true" style="text-align: right">
+            <small
+              style="color: #fff; opacity: 0.9; font-family: VT323, monospace"
+              >¡Suerte, Cupido! ✨</small
+            >
+          </div>
+        </div>
+
+        <!-- Panel pantalla con reels -->
+        <section class="panel" aria-label="Pantalla de la máquina">
+          <div class="screen" id="screen" aria-live="polite" aria-atomic="true">
+            <div class="lights" id="lights" aria-hidden="true">
+              <div class="light"></div>
+              <div class="light"></div>
+              <div class="light"></div>
+              <div class="light"></div>
+            </div>
+
+            <div class="reel" id="r0" aria-hidden="true">💖</div>
+            <div class="reel" id="r1" aria-hidden="true">💘</div>
+            <div class="reel" id="r2" aria-hidden="true">💕</div>
+          </div>
+
+          <div style="display: flex; gap: 12px; align-items: center">
+            <div
+              style="
+                font-size: 13px;
+                color: #4a2a33;
+                font-family: VT323, monospace;
+              "
+            >
+              Tiradas: <strong id="spinCount">0/4</strong>
+            </div>
+            <div style="flex: 1"></div>
+            <button id="myCoupon" class="small-btn" aria-label="Mi Cupón">
+              Mi Cupón
+            </button>
+          </div>
+        </section>
+
+        <!-- Panel controles -->
+        <aside class="controls" aria-label="Controles de juego">
+          <div class="info" id="info" role="status" aria-live="polite">
+            ¡Gira hasta 4 veces! En la cuarta tirada ganas seguro 💘
+          </div>
+
+          <button id="spinBtn" class="big-btn" aria-label="GIRAR">GIRAR</button>
+          <button id="resetBtn" class="small-btn" aria-label="Jugar otra vez">
+            Jugar otra vez 💕
+          </button>
+        </aside>
+      </main>
+    </div>
+
+    <!-- Corazones animados -->
+    <div class="hearts" id="hearts" aria-hidden="true"></div>
+
+    <!-- Modal cupón -->
+    <div
+      class="overlay"
+      id="overlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+      <div class="modal" role="document">
+        <h3
+          id="modalTitle"
+          style="margin: 0 0 8px; font-family: VT323, monospace"
+        >
+          ¡Ganaste un descuento especial 💕!
+        </h3>
+        <div
+          id="modalMsg"
+          style="color: #4a2a33; font-family: VT323, monospace"
+        >
+          Copialo y úsalo en tu próxima compra 💌
+        </div>
+        <div class="coupon" id="couponCode">--</div>
+
+        <div class="actions">
+          <button
+            id="copyBtn"
+            class="btn-min btn-copy"
+            aria-label="Copiar cupón"
+          >
+            Copiar
+          </button>
+          <button
+            id="closeBtn"
+            class="btn-min btn-play"
+            aria-label="Jugar otra vez"
+          >
+            Jugar otra vez 💖
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      /* -------------------------
+       Variables y elementos
+       ------------------------- */
+      // Símbolos románticos (pueden modificarse)
+      const SYMBOLS = ["💖", "💕", "💘", "💝", "🌹", "🍫", "💌"];
+      const spinBtn = document.getElementById("spinBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const myCouponBtn = document.getElementById("myCoupon");
+      const reels = [
+        document.getElementById("r0"),
+        document.getElementById("r1"),
+        document.getElementById("r2"),
+      ];
+      const lights = document.getElementById("lights");
+      const heartsContainer = document.getElementById("hearts");
+      const overlay = document.getElementById("overlay");
+      const couponCodeEl = document.getElementById("couponCode");
+      const copyBtn = document.getElementById("copyBtn");
+      const closeBtn = document.getElementById("closeBtn");
+      const toastEl = document.getElementById("toast");
+      const spinCountEl = document.getElementById("spinCount");
+      const infoEl = document.getElementById("info");
+
+      // Storage keys
+      const LS_COUPON = "love_coupon_code";
+      const LS_DISCOUNT = "love_coupon_discount";
+      const LS_SPIN = "love_spin_count_session";
+
+      // Configuración
+      const MAX_SPINS = 4; // El usuario puede jugar 4 veces; en la 4ta siempre gana
+      const AUTO_RESET_MS = 6000; // tiempo tras ganar para reiniciar automáticamente
+      let autoResetRef = null;
+      let spinning = false;
+
+      /* -------------------------
+       Utilidades
+       ------------------------- */
+      function showToast(text, ms = 1400) {
+        toastEl.textContent = text;
+        toastEl.classList.add("show");
+        clearTimeout(toastEl._t);
+        toastEl._t = setTimeout(() => toastEl.classList.remove("show"), ms);
+      }
+
+      function setSpinCount(n) {
+        sessionStorage.setItem(LS_SPIN, String(n));
+        spinCountEl.textContent = `${n}/${MAX_SPINS}`;
+      }
+      function getSpinCount() {
+        return Number(sessionStorage.getItem(LS_SPIN) || 0);
+      }
+      function resetSpinCount() {
+        // deja el contador en 0
+        setSpinCount(0);
+      }
+
+      function randSymbol() {
+        return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+      }
+
+      // Genera código tipo LOVE-25-AB12 (garantiza longitud suficiente)
+      function generateCouponCode(discountPercent) {
+        // generar una cadena aleatoria consistente
+        const rnd = Math.random().toString(36).slice(2, 10).toUpperCase();
+        const part = (rnd + "ZZZZ").slice(0, 4); // asegurar 4 chars
+        const code = `LOVE-${discountPercent}-${part}`;
+        try {
+          localStorage.setItem(LS_COUPON, code);
+          localStorage.setItem(LS_DISCOUNT, discountPercent + "%");
+        } catch (e) {
+          // si localStorage no está disponible, no bloquear
+          console.warn("No se pudo guardar el cupón en localStorage", e);
+        }
+        return code;
+      }
+
+      /* -------------------------
+       Render reels (con una pequeña transición)
+       ------------------------- */
+      function renderReels(arr) {
+        arr.forEach((val, i) => {
+          const el = reels[i];
+          if (!el) return;
+          el.classList.add("jiggle");
+          // transición visual
+          el.style.opacity = "0.2";
+          setTimeout(() => {
+            el.textContent = val;
+            el.style.opacity = "1";
+            setTimeout(() => el.classList.remove("jiggle"), 260);
+          }, 90 + i * 60);
+        });
+      }
+
+      /* -------------------------
+       Confetti / hearts animations
+       ------------------------- */
+
+      // Usa canvas-confetti para bursts (si está disponible)
+      function confettiBurst() {
+        if (window.confetti) {
+          // varios bursts con colores románticos
+          const colors = [
+            ["#ff5a9e", "#ffd1e6"],
+            ["#ff3a6b", "#ff9ec6"],
+            ["#fff2f8", "#ffb3d1"],
+          ];
+          for (let i = 0; i < 3; i++) {
+            window.confetti({
+              particleCount: 30,
+              spread: 60,
+              startVelocity: 40,
+              origin: { x: 0.2 + i * 0.3, y: 0.2 },
+              colors: colors[i % colors.length],
+              scalar: 0.9,
+            });
+          }
+        }
+      }
+
+      // DOM hearts that fall (nice retro/confetti look)
+      function spawnHearts(count = 18) {
+        for (let i = 0; i < count; i++) {
+          const span = document.createElement("span");
+          span.className = "heart";
+          span.textContent = ["💖", "💕", "💘", "💝"][
+            Math.floor(Math.random() * 4)
+          ];
+          const left = Math.random() * 100;
+          span.style.left = left + "vw";
+          span.style.top = "-6vh";
+          span.style.fontSize = 12 + Math.random() * 18 + "px";
+          span.style.animationDuration = 3 + Math.random() * 3 + "s";
+          span.style.opacity = 0;
+          heartsContainer.appendChild(span);
+          // cleanup
+          setTimeout(() => {
+            span.remove();
+          }, 7500);
+        }
+      }
+
+      /* -------------------------
+       Spin logic
+       - El usuario puede jugar MAX_SPINS veces.
+       - En la tirada número MAX_SPINS siempre se fuerza victoria (3 símbolos iguales).
+       ------------------------- */
+      function spinAction() {
+        if (spinning) return;
+        spinning = true;
+        spinBtn.disabled = true;
+        lights.classList.add("spin");
+
+        // contador de tiradas
+        let count = getSpinCount() + 1;
+        setSpinCount(count);
+
+        const willWin = count === MAX_SPINS;
+
+        // animación "aleatoria" por 1.2s con cambios rápidos
+        const duration = 1200;
+        const start = performance.now();
+        let last = 0;
+
+        function frame(now) {
+          const elapsed = now - start;
+          const t = Math.min(1, elapsed / duration);
+          const interval = 40 + t * 80; // se vuelve más lento al final
+          if (now - last >= interval) {
+            // mostrar símbolos aleatorios mientras gira
+            renderReels([randSymbol(), randSymbol(), randSymbol()]);
+            last = now;
+          }
+          if (elapsed < duration) {
+            requestAnimationFrame(frame);
+          } else {
+            // resultado final
+            let final;
+            if (willWin) {
+              const s = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+              final = [s, s, s];
+            } else {
+              // asegurar que no sean 3 iguales
+              do {
+                final = [randSymbol(), randSymbol(), randSymbol()];
+              } while (final[0] === final[1] && final[1] === final[2]);
+            }
+            renderReels(final);
+            finishSpin(willWin);
+          }
+        }
+        requestAnimationFrame(frame);
+      }
+
+      /* -------------------------
+       Resultado de la tirada
+       ------------------------- */
+      function finishSpin(win) {
+        // detener luces después de breve retardo
+        setTimeout(() => {
+          lights.classList.remove("spin");
+        }, 260);
+
+        if (win) {
+          // seleccionar descuento con pesos
+          const discounts = ["5", "10", "15", "20", "25"];
+          const weights = [30, 30, 20, 12, 8]; // más probabilidad a descuentos pequeños
+          const idx = (() => {
+            let total = weights.reduce((a, b) => a + b, 0);
+            let r = Math.random() * total;
+            for (let i = 0; i < weights.length; i++) {
+              r -= weights[i];
+              if (r <= 0) return i;
+            }
+            return weights.length - 1;
+          })();
+          const pct = discounts[idx];
+
+          const code = generateCouponCode(pct);
+          // mostrar modal con cupón
+          couponCodeEl.textContent = `${pct}% — ${code}`;
+          overlay.classList.add("show");
+          overlay.setAttribute("aria-hidden", "false");
+
+          // poner foco en el botón de copiar para accesibilidad
+          copyBtn?.focus();
+
+          // animaciones de celebración
+          confettiBurst(); // canvas confetti (si existe)
+          spawnHearts(26); // corazones DOM
+
+          showToast(`¡Ganaste un cupón del ${pct}%!`);
+          // reiniciar contador de tiradas para nueva serie
+          resetSpinCount();
+
+          // auto reset del juego (cerrar modal y preparar para jugar otra vez)
+          clearTimeout(autoResetRef);
+          autoResetRef = setTimeout(() => {
+            closeModal();
+            enablePlay();
+          }, AUTO_RESET_MS);
+        } else {
+          // no ganó
+          const hints = [
+            "¡Casi!",
+            "¡Sigue intentando!",
+            "Buena suerte la próxima vez",
+            "Vuelve a girar 💫",
+          ];
+          showToast(hints[Math.floor(Math.random() * hints.length)]);
+          // permitir seguir jugando (si no llegó al máximo)
+          if (getSpinCount() >= MAX_SPINS) {
+            // por seguridad, si se llegó al máximo y no ganó (no debería ocurrir),
+            // reiniciamos el contador.
+            resetSpinCount();
+          }
+          enablePlay();
+        }
+        spinning = false;
+      }
+
+      /* -------------------------
+       Helpers de UI
+       ------------------------- */
+      function enablePlay() {
+        spinBtn.disabled = false;
+      }
+
+      function closeModal() {
+        overlay.classList.remove("show");
+        overlay.setAttribute("aria-hidden", "true");
+      }
+
+      /* -------------------------
+       Copiar cupón y manejo storage
+       ------------------------- */
+      copyBtn.addEventListener("click", () => {
+        const txt = couponCodeEl.textContent || "";
+        if (!txt || txt === "--") {
+          showToast("Nada para copiar");
+          return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(txt)
+            .then(() => showToast("Copiado 🎉"))
+            .catch(() => showToast("No se pudo copiar"));
+        } else {
+          // fallback: seleccionar y ejecutar copy (menos fiable)
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = txt;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+            showToast("Copiado 🎉");
+          } catch (e) {
+            showToast("No se pudo copiar");
+          }
+        }
+      });
+
+      closeBtn.addEventListener("click", () => {
+        closeModal();
+        enablePlay();
+        clearTimeout(autoResetRef);
+      });
+
+      // Mi cupón (usa localStorage si existe)
+      myCouponBtn.addEventListener("click", () => {
+        const code = localStorage.getItem(LS_COUPON);
+        const disc = localStorage.getItem(LS_DISCOUNT);
+        if (!code) {
+          showToast("No hay cupón guardado");
+          return;
+        }
+        couponCodeEl.textContent = `${disc} — ${code}`;
+        overlay.classList.add("show");
+        overlay.setAttribute("aria-hidden", "false");
+        copyBtn?.focus();
+      });
+
+      // Reiniciar manual
+      resetBtn.addEventListener("click", () => {
+        resetGame();
+      });
+
+      // Acceso rápido: tecla Espacio para girar (evitar cuando foco en inputs)
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+          const targetIsEditable =
+            e.target &&
+            typeof e.target === "object" &&
+            e.target instanceof Element &&
+            e.target.matches("input,textarea,select,[contenteditable='true']");
+          if (!targetIsEditable) {
+            e.preventDefault();
+            spinBtn.click();
+          }
+        }
+        // cerrar modal con Escape
+        if (e.code === "Escape") {
+          if (overlay.classList.contains("show")) {
+            closeModal();
+            enablePlay();
+            clearTimeout(autoResetRef);
+          }
+        }
+      });
+
+      // Cerrar modal si se hace click fuera del .modal
+      overlay.addEventListener("click", (ev) => {
+        if (ev.target === overlay) {
+          closeModal();
+          enablePlay();
+          clearTimeout(autoResetRef);
+        }
+      });
+
+      // Botón Girar
+      spinBtn.addEventListener("click", () => {
+        spinAction();
+      });
+
+      /* -------------------------
+       Reinicio total del juego (restablecer UI)
+       ------------------------- */
+      function resetGame() {
+        resetSpinCount();
+        closeModal();
+        enablePlay();
+        // render reels aleatorios iniciales
+        renderReels([randSymbol(), randSymbol(), randSymbol()]);
+        showToast("Juego reiniciado");
+      }
+
+      /* -------------------------
+       Inicialización al cargar la página
+       ------------------------- */
+      (function init() {
+        const startCount = getSpinCount();
+        setSpinCount(startCount);
+        // reels iniciales
+        renderReels([randSymbol(), randSymbol(), randSymbol()]);
+        // accesibilidad: descripción
+        infoEl.textContent = `Tiradas: ${getSpinCount()}/${MAX_SPINS}. En la ${MAX_SPINS}ª tirada ganas seguro.`;
+      })();
+
+      /* -------------------------
+       Comentarios importantes:
+       - Fixes aplicados: protección en la escucha de teclas para evitar errores
+         cuando e.target no es un Element; fallback de copiado; enfoque al abrir modal;
+         cierre de modal con Escape y click fuera; generación de código consistente.
+       - La 4ª tirada sigue garantizando victoria.
+       - Se maneja graceful-failure si localStorage o clipboard no están disponibles.
+       ------------------------- */
+    </script>
+  </body>
+</html>
