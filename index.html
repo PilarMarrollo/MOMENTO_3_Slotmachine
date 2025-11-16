@@ -370,7 +370,7 @@
                 font-family: VT323, monospace;
               "
             >
-              Tiradas: <strong id="spinCount">0/4</strong>
+              <strong id="spinCount">0/4</strong>
             </div>
             <div style="flex: 1"></div>
             <button id="myCoupon" class="small-btn" aria-label="Mi Cupón">
@@ -382,7 +382,8 @@
         <!-- Panel controles -->
         <aside class="controls" aria-label="Controles de juego">
           <div class="info" id="info" role="status" aria-live="polite">
-            ¡Gira hasta 4 veces! En la cuarta tirada ganas seguro 💘
+            hola! probaa suerte en nuestro love game y gana un premio muy
+            especial para este dia de los enamorados.
           </div>
 
           <button id="spinBtn" class="big-btn" aria-label="GIRAR">GIRAR</button>
@@ -488,14 +489,26 @@
       }
 
       function setSpinCount(n) {
-        sessionStorage.setItem(LS_SPIN, String(n));
-        spinCountEl.textContent = `${n}/${MAX_SPINS}`;
+        // guardar en sessionStorage
+        try {
+          sessionStorage.setItem(LS_SPIN, String(n));
+        } catch (e) {
+          // no bloquear si sessionStorage no está disponible
+        }
+        if (spinCountEl) spinCountEl.textContent = `${n}/${MAX_SPINS}`;
       }
       function getSpinCount() {
-        return Number(sessionStorage.getItem(LS_SPIN) || 0);
+        try {
+          return Number(sessionStorage.getItem(LS_SPIN) || 0);
+        } catch (e) {
+          return 0;
+        }
       }
       function resetSpinCount() {
         // deja el contador en 0
+        try {
+          sessionStorage.removeItem(LS_SPIN);
+        } catch (e) {}
         setSpinCount(0);
       }
 
@@ -505,7 +518,6 @@
 
       // Genera código tipo LOVE-25-AB12 (garantiza longitud suficiente)
       function generateCouponCode(discountPercent) {
-        // generar una cadena aleatoria consistente
         const rnd = Math.random().toString(36).slice(2, 10).toUpperCase();
         const part = (rnd + "ZZZZ").slice(0, 4); // asegurar 4 chars
         const code = `LOVE-${discountPercent}-${part}`;
@@ -513,7 +525,6 @@
           localStorage.setItem(LS_COUPON, code);
           localStorage.setItem(LS_DISCOUNT, discountPercent + "%");
         } catch (e) {
-          // si localStorage no está disponible, no bloquear
           console.warn("No se pudo guardar el cupón en localStorage", e);
         }
         return code;
@@ -826,21 +837,21 @@
        Inicialización al cargar la página
        ------------------------- */
       (function init() {
+        // establecer contador visible (sin sobreescribir el mensaje inicial)
         const startCount = getSpinCount();
         setSpinCount(startCount);
         // reels iniciales
         renderReels([randSymbol(), randSymbol(), randSymbol()]);
-        // accesibilidad: descripción
-        infoEl.textContent = `Tiradas: ${getSpinCount()}/${MAX_SPINS}. En la ${MAX_SPINS}ª tirada ganas seguro.`;
+        // NOTA: no se sobreescribe infoEl; el texto inicial solicitado permanece.
       })();
 
       /* -------------------------
        Comentarios importantes:
-       - Fixes aplicados: protección en la escucha de teclas para evitar errores
-         cuando e.target no es un Element; fallback de copiado; enfoque al abrir modal;
-         cierre de modal con Escape y click fuera; generación de código consistente.
-       - La 4ª tirada sigue garantizando victoria.
-       - Se maneja graceful-failure si localStorage o clipboard no están disponibles.
+       - Reemplacé el texto de .info por el mensaje solicitado y eliminé
+         la sobreescritura que mostraba "Tiradas: 0/4. En la 4ª tirada ganas seguro."
+       - También ajusté el bloque donde aparecía "Tiradas:" para que no muestre esa frase exacta.
+       - El resto de la lógica (4ª tirada garantizada) permanece intacta pero
+         ya no se anuncia en el texto inicial visible.
        ------------------------- */
     </script>
   </body>
