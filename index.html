@@ -116,13 +116,16 @@
         background: linear-gradient(180deg, #fff9fb, #fff);
         border-radius: 12px;
         display: flex;
-        justify-content: center;
-        gap: 12px;
+        justify-content: center; /* centrar los casilleros (reels) */
+        gap: 18px;
         align-items: center;
         border: 2px solid rgba(255, 255, 255, 0.6);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
         position: relative;
         overflow: hidden;
+        margin: 0 auto; /* asegurar centrado del contenedor */
+        padding-top: 10px;
+        padding-bottom: 10px;
       }
 
       /* lámparas / luces retro */
@@ -156,17 +159,31 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 44px;
-        font-family: "Press Start 2P", monospace;
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
         border: 2px solid rgba(255, 255, 255, 0.5);
         transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1),
           box-shadow 220ms;
         will-change: transform;
+        overflow: hidden;
+        padding: 0; /* asegurar que no haya padding que empuje el símbolo */
       }
       .reel.jiggle {
         transform: translateY(-6px);
         box-shadow: 0 18px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      /* símbolo centrado dentro del reel */
+      .reel .symbol {
+        display: flex; /* bloque flex para eliminar gaps de inline */
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+        line-height: 0; /* <-- crucial: evita espacio blanco inferior del emoji */
+        font-size: clamp(40px, 7vw, 64px); /* tamaño responsivo más generoso */
+        font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+          "Twemoji Mozilla", "EmojiOne", "Press Start 2P", monospace;
+        transform: translateZ(0); /* mejorar render */
       }
 
       /* -------------------------
@@ -193,6 +210,15 @@
         font-size: 14px;
         width: 100%;
       }
+      /* quitar borde/foco negro predeterminado del botón */
+      .big-btn:focus {
+        outline: none;
+        box-shadow: 0 14px 30px rgba(255, 20, 80, 0.18);
+      }
+      .big-btn::-moz-focus-inner {
+        border: 0;
+      }
+
       .small-btn {
         background: transparent;
         border: 2px solid rgba(255, 255, 255, 0.14);
@@ -211,19 +237,6 @@
         font-size: 13px;
         text-align: center;
         font-family: VT323, monospace;
-      }
-
-      /* Estilo para contador (hacerlos más grandes) */
-      #spinCount {
-        display: inline-block;
-        font-size: 28px; /* aumentado para mayor visibilidad */
-        font-family: "Press Start 2P", monospace;
-        color: #3b2430;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 8px 12px;
-        border-radius: 10px;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-        letter-spacing: 0.5px;
       }
 
       /* -------------------------
@@ -341,8 +354,15 @@
           grid-template-columns: 1fr;
           padding: 16px;
         }
-        #spinCount {
-          font-size: 22px;
+        .screen {
+          gap: 12px;
+        }
+        .reel {
+          width: 100px;
+          height: 100px;
+        }
+        .reel .symbol {
+          font-size: clamp(32px, 12vw, 48px);
         }
       }
     </style>
@@ -373,21 +393,21 @@
               <div class="light"></div>
             </div>
 
-            <div class="reel" id="r0" aria-hidden="true">💖</div>
-            <div class="reel" id="r1" aria-hidden="true">💘</div>
-            <div class="reel" id="r2" aria-hidden="true">💕</div>
+            <!-- Reels centrados (cada uno contiene .symbol para centrar emoji) -->
+            <div class="reel" id="r0" aria-hidden="true">
+              <span class="symbol">💖</span>
+            </div>
+            <div class="reel" id="r1" aria-hidden="true">
+              <span class="symbol">💘</span>
+            </div>
+            <div class="reel" id="r2" aria-hidden="true">
+              <span class="symbol">💕</span>
+            </div>
           </div>
 
-          <div style="display: flex; gap: 12px; align-items: center">
-            <div
-              style="
-                font-size: 13px;
-                color: #4a2a33;
-                font-family: VT323, monospace;
-              "
-            >
-              <strong id="spinCount">0/4</strong>
-            </div>
+          <div
+            style="display: flex; gap: 12px; align-items: center; width: 100%"
+          >
             <div style="flex: 1"></div>
             <button id="myCoupon" class="small-btn" aria-label="Mi Cupón">
               Mi Cupón
@@ -398,8 +418,8 @@
         <!-- Panel controles -->
         <aside class="controls" aria-label="Controles de juego">
           <div class="info" id="info" role="status" aria-live="polite">
-            hola! probaa suerte en nuestro love game y gana un premio muy
-            especial para este dia de los enamorados.
+            ¡Hola! Prueba suerte en nuestro Love Game y gana un premio muy
+            especial para este Día de los Enamorados.
           </div>
 
           <button id="spinBtn" class="big-btn" aria-label="GIRAR">GIRAR</button>
@@ -430,8 +450,8 @@
           ¡Hola!
         </h3>
         <div style="color: #4a2a33; font-family: VT323, monospace">
-          probaa suerte en nuestro love game y gana un premio muy especial para
-          este dia de los enamorados.
+          Prueba suerte en nuestro Love Game y gana un premio muy especial para
+          este Día de los Enamorados.
         </div>
 
         <div class="actions" style="margin-top: 14px">
@@ -466,7 +486,7 @@
           id="modalMsg"
           style="color: #4a2a33; font-family: VT323, monospace"
         >
-          Copialo y úsalo en tu próxima compra 💌
+          Cópialo y úsalo en tu próxima compra 💌
         </div>
         <div class="coupon" id="couponCode">--</div>
 
@@ -518,7 +538,6 @@
       const copyBtn = document.getElementById("copyBtn");
       const closeBtn = document.getElementById("closeBtn");
       const toastEl = document.getElementById("toast");
-      const spinCountEl = document.getElementById("spinCount");
       const infoEl = document.getElementById("info");
 
       // Storage keys
@@ -543,13 +562,12 @@
       }
 
       function setSpinCount(n) {
-        // guardar en sessionStorage
+        // guardar en sessionStorage (UI eliminado, pero guardamos el valor por lógica)
         try {
           sessionStorage.setItem(LS_SPIN, String(n));
         } catch (e) {
           // no bloquear si sessionStorage no está disponible
         }
-        if (spinCountEl) spinCountEl.textContent = `${n}/${MAX_SPINS}`;
       }
       function getSpinCount() {
         try {
@@ -559,11 +577,9 @@
         }
       }
       function resetSpinCount() {
-        // deja el contador en 0
         try {
           sessionStorage.removeItem(LS_SPIN);
         } catch (e) {}
-        setSpinCount(0);
       }
 
       function randSymbol() {
@@ -586,6 +602,7 @@
 
       /* -------------------------
        Render reels (con una pequeña transición)
+       - ahora inyecta <span class="symbol"> para garantizar centrado del emoji
        ------------------------- */
       function renderReels(arr) {
         arr.forEach((val, i) => {
@@ -595,7 +612,8 @@
           // transición visual
           el.style.opacity = "0.2";
           setTimeout(() => {
-            el.textContent = val;
+            // usar innerHTML con span.symbol para garantizar estilos de centrado
+            el.innerHTML = `<span class="symbol">${val}</span>`;
             el.style.opacity = "1";
             setTimeout(() => el.classList.remove("jiggle"), 260);
           }, 90 + i * 60);
@@ -652,8 +670,6 @@
 
       /* -------------------------
        Spin logic
-       - El usuario puede jugar MAX_SPINS veces.
-       - En la tirada número MAX_SPINS siempre se fuerza victoria (3 símbolos iguales).
        ------------------------- */
       function spinAction() {
         if (spinning) return;
@@ -664,7 +680,7 @@
         spinBtn.disabled = true;
         lights.classList.add("spin");
 
-        // contador de tiradas
+        // contador de tiradas (lógica interna aunque no se muestre)
         let count = getSpinCount() + 1;
         setSpinCount(count);
 
@@ -924,7 +940,7 @@
        Inicialización al cargar la página
        ------------------------- */
       document.addEventListener("DOMContentLoaded", () => {
-        // establecer contador visible
+        // establecer contador interno (no visible)
         const startCount = getSpinCount();
         setSpinCount(startCount);
         // reels iniciales
@@ -940,17 +956,6 @@
           introClose?.focus();
         }
       });
-
-      /* -------------------------
-       Comentarios importantes:
-       - Añadí el popup inicial (introOverlay) que se muestra al cargar la página con
-         el mensaje solicitado y un botón "¡Jugar!" para cerrarlo.
-       - Mientras el popup intro está abierto el botón GIRAR queda deshabilitado
-         para evitar giros accidentales.
-       - Incrementé el tamaño visual del contador (#spinCount) para que los números n/4
-         se vean más grandes y llamativos.
-       - El resto de la lógica del juego permanece igual.
-       ------------------------- */
     </script>
   </body>
 </html>
