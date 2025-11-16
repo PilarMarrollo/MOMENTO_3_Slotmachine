@@ -70,6 +70,10 @@
         gap: 18px;
         position: relative;
         overflow: visible;
+
+        /* Alineamos verticalmente ambos paneles (pantalla y controles)
+           para que el contenido de la izquierda pueda alinearse con el botón GIRAR */
+        align-items: center;
       }
 
       /* Header (LOVE GAME) */
@@ -107,12 +111,16 @@
         align-items: center;
         gap: 12px;
         min-height: 300px;
+
+        /* Centrar verticalmente el contenido dentro del panel para que
+           la "pantalla" quede alineada con el botón GIRAR del panel derecho */
+        justify-content: center;
       }
 
       .screen {
         width: 100%;
         max-width: 420px;
-        padding: 14px;
+        padding: 10px 14px; /* unificar padding vertical/horizontal */
         background: linear-gradient(180deg, #fff9fb, #fff);
         border-radius: 12px;
         display: flex;
@@ -124,8 +132,10 @@
         position: relative;
         overflow: hidden;
         margin: 0 auto; /* asegurar centrado del contenedor */
-        padding-top: 10px;
-        padding-bottom: 10px;
+
+        /* Levantamos ligeramente la pantalla para que los emojis queden
+           un poco por encima del botón GIRAR (como pidió el usuario) */
+        transform: translateY(-8px);
       }
 
       /* lámparas / luces retro */
@@ -179,7 +189,9 @@
         justify-content: center;
         height: 100%;
         width: 100%;
-        line-height: 0; /* <-- crucial: evita espacio blanco inferior del emoji */
+        /* importante: usar line-height 1 para que el emoji se centre verticalmente
+           dentro del contenedor, evitando recortes o desplazamientos visuales */
+        line-height: 1;
         font-size: clamp(40px, 7vw, 64px); /* tamaño responsivo más generoso */
         font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
           "Twemoji Mozilla", "EmojiOne", "Press Start 2P", monospace;
@@ -363,6 +375,11 @@
         }
         .reel .symbol {
           font-size: clamp(32px, 12vw, 48px);
+        }
+
+        /* En pantallas pequeñas reducimos el "lift" para evitar cortar */
+        .screen {
+          transform: translateY(-4px);
         }
       }
     </style>
